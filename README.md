@@ -11,4 +11,4 @@ This assignment relies on the Coverage programs.
 This assignment relies on the Circles programs. 
 
 ## Lab 1
-This assignment includes setup for future assignments. 
+This assignment includes setup for future assignments. Includes the HelloWorld project and adds questions and Ant buildfiles to other projects.
