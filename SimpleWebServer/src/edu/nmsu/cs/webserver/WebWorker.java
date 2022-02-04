@@ -25,6 +25,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.File;
+//added an import for java.io.File
 import java.net.Socket;
 import java.text.DateFormat;
 import java.util.Date;
@@ -32,6 +34,8 @@ import java.util.TimeZone;
 
 public class WebWorker implements Runnable
 {
+	//added a File object declaration
+	File test;
 
 	private Socket socket;
 
@@ -41,6 +45,7 @@ public class WebWorker implements Runnable
 	public WebWorker(Socket s)
 	{
 		socket = s;
+		test = new File("C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer\\res\\acc\\test.html"); //Added definition for test
 	}
 
 	/**
