@@ -36,11 +36,16 @@ import java.util.TimeZone;
 
 public class WebWorker implements Runnable
 {
-	//added a File object declaration
+	//instanciated Date, BufferedReader, FileReader, dateTag, and serverTag
 	BufferedReader br;
+	Date currDate;
 	File test;
 	FileReader fr;
+	String dateTag;
+	String serverTag;
 	String line;
+	
+
 	private Socket socket;
 
 	/**
@@ -51,9 +56,13 @@ public class WebWorker implements Runnable
 		socket = s;
 		try
 		{
+			//added declarations for items instanciated in lines 40-46
+			currDate = new Date();
 			fr = new FileReader("C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer\\src\\edu\\nmsu\\cs\\webserver\\test.html");
 			br = new BufferedReader(fr); //Added definition for test
 			line = "";
+			dateTag = "<cs371date>";
+			serverTag = "<cs371server>";
 		}
 		catch(IOException e)
 		{
@@ -154,11 +163,19 @@ public class WebWorker implements Runnable
 		os.write("<h3>My web server works!</h3>\n".getBytes());
 		os.write("</body></html>\n".getBytes());
 		
+		//while loop that prints out the contents of "test.html" and replaces date and server tags
+		//with the current date and server
 		while((line = br.readLine()) != null)
 		{
+			
+			if(line.contains(dateTag))
+				line = line.replace(dateTag, currDate.toString());
+
+			if(line.contains(serverTag))
+				line = line.replace(serverTag, "Diego's Insane Server");
+				
 			os.write(line.getBytes());
 		}
-
 	}
 
 } // end class
