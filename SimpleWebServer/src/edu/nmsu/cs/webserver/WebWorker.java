@@ -20,13 +20,15 @@ package edu.nmsu.cs.webserver;
  * @author Jon Cook, Ph.D.
  *
  **/
-
+//added an import for File, FileReader, and FileNotFoundException
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.File;
-//added an import for java.io.File
+import java.io.FileReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.Socket;
 import java.text.DateFormat;
 import java.util.Date;
@@ -35,8 +37,10 @@ import java.util.TimeZone;
 public class WebWorker implements Runnable
 {
 	//added a File object declaration
+	BufferedReader br;
 	File test;
-
+	FileReader fr;
+	String line;
 	private Socket socket;
 
 	/**
@@ -45,7 +49,16 @@ public class WebWorker implements Runnable
 	public WebWorker(Socket s)
 	{
 		socket = s;
-		test = new File("C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer\\res\\acc\\test.html"); //Added definition for test
+		try
+		{
+			fr = new FileReader("C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer\\src\\edu\\nmsu\\cs\\webserver\\test.html");
+			br = new BufferedReader(fr); //Added definition for test
+			line = "";
+		}
+		catch(IOException e)
+		{
+			System.err.println("Error 404: File Not Found");
+		}
 	}
 
 	/**
@@ -109,7 +122,7 @@ public class WebWorker implements Runnable
 	 * @param contentType
 	 *          is the string MIME content type (e.g. "text/html")
 	 **/
-	private void writeHTTPHeader(OutputStream os, String contentType) throws Exception
+	private void writeHTTPHeader(OutputStream os, String contentType) throws Exception, FileNotFoundException
 	{
 		Date d = new Date();
 		DateFormat df = DateFormat.getDateTimeInstance();
@@ -135,11 +148,17 @@ public class WebWorker implements Runnable
 	 * @param os
 	 *          is the OutputStream object to write to
 	 **/
-	private void writeContent(OutputStream os) throws Exception
+	private void writeContent(OutputStream os) throws Exception, FileNotFoundException 
 	{
 		os.write("<html><head></head><body>\n".getBytes());
 		os.write("<h3>My web server works!</h3>\n".getBytes());
 		os.write("</body></html>\n".getBytes());
+		
+		while((line = br.readLine()) != null)
+		{
+			os.write(line.getBytes());
+		}
+
 	}
 
 } // end class

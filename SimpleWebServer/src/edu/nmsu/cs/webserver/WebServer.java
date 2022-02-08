@@ -1,5 +1,6 @@
 package edu.nmsu.cs.webserver;
 
+import java.io.FileNotFoundException;
 /**
  * A simple web server: it creates a new WebWorker for each new client connection, so all the
  * WebServer object does is listen on the port for incoming client connection requests.
@@ -38,7 +39,7 @@ public class WebServer
 	 * @param port
 	 *          is the TCP port number to accept connections on
 	 **/
-	private boolean start(int port)
+	private boolean start(int port) throws FileNotFoundException
 	{
 		Socket workerSocket;
 		WebWorker worker;
@@ -82,7 +83,7 @@ public class WebServer
 	 * Application main: process command line and start web server; default port number is 8080 if not
 	 * given on command line.
 	 **/
-	public static void main(String args[])
+	public static void main(String args[]) throws FileNotFoundException
 	{
 		int port = 8080;
 		if (args.length > 1)
