@@ -44,6 +44,7 @@ public class WebWorker implements Runnable
 	String dateTag;
 	String serverTag;
 	String line;
+	String path;
 	
 
 	private Socket socket;
@@ -54,19 +55,23 @@ public class WebWorker implements Runnable
 	public WebWorker(Socket s)
 	{
 		socket = s;
+		test = new File("test.html");
 		try
 		{
 			//added declarations for items instanciated in lines 40-46
 			currDate = new Date();
-			fr = new FileReader("C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer\\src\\edu\\nmsu\\cs\\webserver\\test.html");
+			
+			//fr = new FileReader("C:\\Users\\Diego Terrazas\\Documents \\GitHub\\Programs\\SimpleWebServer\\src\\edu\\nmsu\\cs\\webserver\\test.html");
+			fr = new FileReader(test);
 			br = new BufferedReader(fr); //Added definition for test
 			line = "";
 			dateTag = "<cs371date>";
 			serverTag = "<cs371server>";
+			path = "";
 		}
 		catch(IOException e)
 		{
-			System.err.println("Error 404: File Not Found");
+			System.err.println("File Not Found");
 		}
 	}
 
@@ -86,6 +91,10 @@ public class WebWorker implements Runnable
 			writeHTTPHeader(os, "text/html");
 			writeContent(os);
 			os.flush();
+
+			if(test.exists())
+				System.out.println("yep");
+
 			socket.close();
 		}
 		catch (Exception e)
@@ -101,6 +110,7 @@ public class WebWorker implements Runnable
 	 **/
 	private void readHTTPRequest(InputStream is)
 	{
+		
 		String line;
 		BufferedReader r = new BufferedReader(new InputStreamReader(is));
 		while (true)
@@ -111,6 +121,10 @@ public class WebWorker implements Runnable
 					Thread.sleep(1);
 				line = r.readLine();
 				System.err.println("Request line: (" + line + ")");
+				
+				//if(line.contains("http://localhost:"))
+					//path = line;
+
 				if (line.length() == 0)
 					break;
 			}
@@ -131,12 +145,28 @@ public class WebWorker implements Runnable
 	 * @param contentType
 	 *          is the string MIME content type (e.g. "text/html")
 	 **/
-	private void writeHTTPHeader(OutputStream os, String contentType) throws Exception, FileNotFoundException
+	private void writeHTTPHeader(OutputStream os, String contentType) throws Exception
 	{
 		Date d = new Date();
 		DateFormat df = DateFormat.getDateTimeInstance();
 		df.setTimeZone(TimeZone.getTimeZone("GMT"));
-		os.write("HTTP/1.1 200 OK\n".getBytes());
+
+		//added a File object that extracts the path of the file from the URL and checks if it exists
+		//sends "404 not found" if it does not
+
+		String root = "C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer";
+		//int slashIndex = path.indexOf('/', path.indexOf(':'));
+		//path = path.substring(slashIndex);
+		//System.out.println(path);
+		//path = path.replace('/', '\\');
+		//File requested = new File(root + path);
+		
+		//if(requested.exists())
+			os.write("HTTP/1.1 200 OK\n".getBytes());
+
+		//else
+			//os.write("HTTP/1.1 404 Not Found\n".getBytes());*/
+
 		os.write("Date: ".getBytes());
 		os.write((df.format(d)).getBytes());
 		os.write("\n".getBytes());
@@ -159,23 +189,26 @@ public class WebWorker implements Runnable
 	 **/
 	private void writeContent(OutputStream os) throws Exception, FileNotFoundException 
 	{
+		DateFormat df = DateFormat.getDateTimeInstance();
+		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+		
+
 		os.write("<html><head></head><body>\n".getBytes());
 		os.write("<h3>My web server works!</h3>\n".getBytes());
 		os.write("</body></html>\n".getBytes());
 		
 		//while loop that prints out the contents of "test.html" and replaces date and server tags
 		//with the current date and server
-		while((line = br.readLine()) != null)
+		/*while((line = br.readLine()) != null)
 		{
-			
 			if(line.contains(dateTag))
-				line = line.replace(dateTag, currDate.toString());
+				line = line.replace(dateTag, (df.format(currDate)));
 
 			if(line.contains(serverTag))
 				line = line.replace(serverTag, "Diego's Insane Server");
 				
 			os.write(line.getBytes());
-		}
+		}*/
 	}
 
 } // end class
