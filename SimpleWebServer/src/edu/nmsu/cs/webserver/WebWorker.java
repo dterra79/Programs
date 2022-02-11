@@ -36,16 +36,17 @@ import java.util.TimeZone;
 
 public class WebWorker implements Runnable
 {
-	//instanciated Date, BufferedReader, FileReader, dateTag, and serverTag
-	BufferedReader br;
+	//instanciated Date, File, dateTag, serverTag, and a boolean
 	Date currDate;
 	File test;
-	FileReader fr;
+	File requested;
 	String dateTag;
 	String serverTag;
 	String line;
 	String path;
-	
+	boolean noRequest;
+	boolean fileFound;   /*set to true automatically, false if 
+                        requested file is not found*/
 
 	private Socket socket;
 
@@ -55,24 +56,18 @@ public class WebWorker implements Runnable
 	public WebWorker(Socket s)
 	{
 		socket = s;
-		test = new File("test.html");
-		try
-		{
-			//added declarations for items instanciated in lines 40-46
-			currDate = new Date();
-			
-			//fr = new FileReader("C:\\Users\\Diego Terrazas\\Documents \\GitHub\\Programs\\SimpleWebServer\\src\\edu\\nmsu\\cs\\webserver\\test.html");
-			fr = new FileReader(test);
-			br = new BufferedReader(fr); //Added definition for test
-			line = "";
-			dateTag = "<cs371date>";
-			serverTag = "<cs371server>";
-			path = "";
-		}
-		catch(IOException e)
-		{
-			System.err.println("File Not Found");
-		}
+		currDate = new Date();
+      test = new File("test.html");
+      fileFound = true;
+	noRequest = true;
+      
+		line = "";
+      //tags that can be read and replaced with data
+		dateTag = "<cs371date>";
+		serverTag = "<cs371server>";
+      
+      //path a requested file
+		path = "";
 	}
 
 	/**
@@ -89,12 +84,10 @@ public class WebWorker implements Runnable
 			OutputStream os = socket.getOutputStream();
 			readHTTPRequest(is);
 			writeHTTPHeader(os, "text/html");
+			System.out.println("writeHeader works");
 			writeContent(os);
+			System.out.println("writeContent works");	
 			os.flush();
-
-			if(test.exists())
-				System.out.println("yep");
-
 			socket.close();
 		}
 		catch (Exception e)
@@ -122,8 +115,8 @@ public class WebWorker implements Runnable
 				line = r.readLine();
 				System.err.println("Request line: (" + line + ")");
 				
-				//if(line.contains("http://localhost:"))
-					//path = line;
+				if(line.contains("GET"))
+				   path = line;
 
 				if (line.length() == 0)
 					break;
@@ -150,29 +143,43 @@ public class WebWorker implements Runnable
 		Date d = new Date();
 		DateFormat df = DateFormat.getDateTimeInstance();
 		df.setTimeZone(TimeZone.getTimeZone("GMT"));
-
 		//added a File object that extracts the path of the file from the URL and checks if it exists
 		//sends "404 not found" if it does not
+      
+      //only goes into the if statement if 
+      //the browser is actually requesting a file
+      if(path.length() > 16)
+      {
+	noRequest = false;
+	String root = test.getCanonicalPath();
+	root = root.substring(0, root.length() - 10);	
 
-		String root = "C:\\Users\\Diego Terrazas\\Documents\\GitHub\\Programs\\SimpleWebServer";
-		//int slashIndex = path.indexOf('/', path.indexOf(':'));
-		//path = path.substring(slashIndex);
-		//System.out.println(path);
-		//path = path.replace('/', '\\');
-		//File requested = new File(root + path);
+         //prints out and makes a usable file path 
+         //out of the requested file
+         int startIndex = path.indexOf('/');
+         int endIndex = path.indexOf('H');
+	 path = path.substring(startIndex, endIndex - 1);
+         String requestPath = root + path;
+
+		   requested = new File(requestPath.trim());
 		
-		//if(requested.exists())
-			os.write("HTTP/1.1 200 OK\n".getBytes());
+		   if(requested.canRead())
+		   	os.write("HTTP/1.1 200 OK\n".getBytes());
 
-		//else
-			//os.write("HTTP/1.1 404 Not Found\n".getBytes());*/
-
+         
+		   else
+         {
+			   os.write("HTTP/1.1 404 Not Found\n".getBytes());
+            fileFound = false;
+         }
+      }
+      else
+         os.write("HTTP/1.1 200 OK\n".getBytes());
+         //os.write("HTTP/1.1 404 Not Found\n".getBytes());
 		os.write("Date: ".getBytes());
 		os.write((df.format(d)).getBytes());
 		os.write("\n".getBytes());
-		os.write("Server: Jon's very own server\n".getBytes());
-		// os.write("Last-Modified: Wed, 08 Jan 2003 23:11:55 GMT\n".getBytes());
-		// os.write("Content-Length: 438\n".getBytes());
+		os.write("Server: Diego's Insane Radical and totally Awesome Server\n".getBytes());
 		os.write("Connection: close\n".getBytes());
 		os.write("Content-Type: ".getBytes());
 		os.write(contentType.getBytes());
@@ -191,24 +198,58 @@ public class WebWorker implements Runnable
 	{
 		DateFormat df = DateFormat.getDateTimeInstance();
 		df.setTimeZone(TimeZone.getTimeZone("GMT"));
-		
-
-		os.write("<html><head></head><body>\n".getBytes());
-		os.write("<h3>My web server works!</h3>\n".getBytes());
-		os.write("</body></html>\n".getBytes());
-		
-		//while loop that prints out the contents of "test.html" and replaces date and server tags
-		//with the current date and server
-		/*while((line = br.readLine()) != null)
+      		FileReader fr = new FileReader(test);
+      		BufferedReader br = new BufferedReader(fr);
+		if(noRequest)
 		{
-			if(line.contains(dateTag))
-				line = line.replace(dateTag, (df.format(currDate)));
+			os.write("<html><head></head><body>\n".getBytes());
+			os.write("<h3>My web server works!</h3>\n".getBytes());
+			os.write("</body></html>\n".getBytes());
+			
 
-			if(line.contains(serverTag))
-				line = line.replace(serverTag, "Diego's Insane Server");
+			//while loop that prints out the contents of "test.html" and replaces date and server tags
+			//with the current date and server
+			while((line = br.readLine()) != null)
+			{	
+				if(line.contains(dateTag))
+					line = line.replace(dateTag, (df.format(currDate)));
+	   			
 				
-			os.write(line.getBytes());
-		}*/
-	}
 
+				if(line.contains(serverTag))
+				   	line = line.replace(serverTag, "Diego's Insane Server");
+			   		
+				os.write(line.getBytes());
+			}
+		}
+		else
+		{
+			if(fileFound)
+			{
+				String read = "";
+				FileReader filer = new FileReader(requested.getCanonicalPath());
+	      			BufferedReader bufferedr = new BufferedReader(filer);
+			
+				while((read = bufferedr.readLine()) != null)
+				{
+					if(read.contains(dateTag))
+						read = read.replace(dateTag, (df.format(currDate)));
+		   
+					if(read.contains(serverTag))
+					   	read = read.replace(serverTag, "Diego's Insane Server");
+			   		
+					os.write(read.getBytes());
+				}
+			
+			}
+
+	      		else
+	      		{
+		 		os.write("<html><head></head><body>\n".getBytes());
+				os.write("<h3>Error 404: File Not Found :(</h3>\n".getBytes());
+				os.write("</body></html>\n".getBytes());
+
+	      		}
+		}
+	}
 } // end class

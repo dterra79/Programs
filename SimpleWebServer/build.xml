@@ -1,0 +1,17 @@
+<project name="WebServerProj" basedir=".">
+  <description>
+	WebWorker ant build file
+  </description>
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="bin" location="bin"/>
+
+  <target name="compile" description="compile the source">
+    <!--  Compile the Java code from ${src} into ${bin}  -->
+    <javac srcdir="${src}" destdir="${bin}"/>
+   </target>
+
+   <target name = "run" depends = "compile">
+     <java classname = "edu.nmsu.cs.webserver.WebServer" classpath = "${bin}">
+   </target>
+</project>
