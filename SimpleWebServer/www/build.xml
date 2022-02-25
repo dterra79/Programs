@@ -1,4 +1,4 @@
-<project name="WebServerProj" basedir=".">
+<project name="WebServerProj" default="run" basedir=".">
   <description>
 	WebWorker ant build file
   </description>
@@ -8,10 +8,16 @@
 
   <target name="compile" description="compile the source">
     <!--  Compile the Java code from ${src} into ${bin}  -->
-    <javac srcdir="${src}" destdir="${bin}"/>
+    <javac includeantruntime="false" srcdir="${src}" destdir="${bin}"/>
    </target>
 
    <target name = "run" depends = "compile">
-     <java classname = "edu.nmsu.cs.webserver.WebServer" classpath = "${bin}">
+     <java classname = "edu.nmsu.cs.webserver.WebServer" classpath = "${bin}"/>
    </target>
+   
+   <target name="clean" depends="run">
+    <!-- Delete the ${bin} directory tree -->
+    <delete dir="${bin}"/>
+  </target>
+  
 </project>

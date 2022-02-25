@@ -1,5 +1,5 @@
 package edu.nmsu.cs.webserver;
-//testing to see if git hir
+
 /**
  * Web worker: an object of this class executes in its own new thread to receive and respond to a
  * single HTTP request. After the constructor the object executes on its "run" method, and leaves
@@ -21,7 +21,9 @@ package edu.nmsu.cs.webserver;
  *
  **/
 //added an import for File, FileReader, and FileNotFoundException
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -30,9 +32,11 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+import javax.imageio.ImageIO;
 
 public class WebWorker implements Runnable
 {
@@ -42,8 +46,8 @@ public class WebWorker implements Runnable
 	File requested;
 	String dateTag;
 	String serverTag;
-	String line;
 	String path;
+	String type;
 	boolean noRequest;
 	boolean fileFound;   /*set to true automatically, false if 
                         requested file is not found*/
@@ -57,17 +61,19 @@ public class WebWorker implements Runnable
 	{
 		socket = s;
 		currDate = new Date();
-      test = new File("test.html");
-      fileFound = true;
-	noRequest = true;
+        test = new File("test.html");
+        fileFound = true;
+        noRequest = true;
       
-		line = "";
       //tags that can be read and replaced with data
 		dateTag = "<cs371date>";
 		serverTag = "<cs371server>";
       
       //path a requested file
 		path = "";
+		
+        //default type
+        type = "nothing";
 	}
 
 	/**
@@ -83,7 +89,7 @@ public class WebWorker implements Runnable
 			InputStream is = socket.getInputStream();
 			OutputStream os = socket.getOutputStream();
 			readHTTPRequest(is);
-			writeHTTPHeader(os, "text/html");
+			writeHTTPHeader(os, checkType(type) );
 			System.out.println("writeHeader works");
 			writeContent(os);
 			System.out.println("writeContent works");	
@@ -101,7 +107,7 @@ public class WebWorker implements Runnable
 	/**
 	 * Read the HTTP request header.
 	 **/
-	private void readHTTPRequest(InputStream is)
+	private void readHTTPRequest(InputStream is) throws IOException
 	{
 		
 		String line;
@@ -118,7 +124,7 @@ public class WebWorker implements Runnable
 				if(line.contains("GET"))
 				   path = line;
 
-				if (line.length() == 0)
+                if (line.length() == 0)
 					break;
 			}
 			catch (Exception e)
@@ -127,6 +133,31 @@ public class WebWorker implements Runnable
 				break;
 			}
 		}
+		
+		if(path.length() > 15)
+        {
+            noRequest = false;
+            String root = test.getCanonicalPath();
+            root = root.substring(0, root.length() - 10);	
+
+            //prints out and makes a usable file path 
+            //out of the requested
+            System.out.println(path);
+            int startIndex = path.indexOf('/');
+            int endIndex = path.indexOf('H');
+            path = path.substring(startIndex, endIndex - 1);
+            String requestPath = root + path;
+            System.out.println(requestPath.trim());
+            requested = new File(requestPath.trim());
+                  
+            type = path.substring(path.indexOf(".") , path.length());
+            System.out.println("Request type: " + type);
+                    
+        }
+		
+		else 
+            noRequest = true;
+		
 		return;
 	}
 
@@ -146,36 +177,18 @@ public class WebWorker implements Runnable
 		//added a File object that extracts the path of the file from the URL and checks if it exists
 		//sends "404 not found" if it does not
       
-      //only goes into the if statement if 
-      //the browser is actually requesting a file
-      if(path.length() > 16)
-      {
-	noRequest = false;
-	String root = test.getCanonicalPath();
-	root = root.substring(0, root.length() - 10);	
-
-         //prints out and makes a usable file path 
-         //out of the requested file
-         int startIndex = path.indexOf('/');
-         int endIndex = path.indexOf('H');
-	 path = path.substring(startIndex, endIndex - 1);
-         String requestPath = root + path;
-
-		   requested = new File(requestPath.trim());
-		
-		   if(requested.canRead())
-		   	os.write("HTTP/1.1 200 OK\n".getBytes());
-
-         
-		   else
-         {
-			   os.write("HTTP/1.1 404 Not Found\n".getBytes());
+        //only goes into the if statement if 
+        //the browser is actually requesting a file
+        
+        if(!noRequest && !requested.canRead())
+        {
+            os.write("HTTP/1.1 404 Not Found\n".getBytes());
             fileFound = false;
-         }
-      }
-      else
-         os.write("HTTP/1.1 200 OK\n".getBytes());
-         //os.write("HTTP/1.1 404 Not Found\n".getBytes());
+        }
+        
+        else
+            os.write("HTTP/1.1 200 OK\n".getBytes());
+        
 		os.write("Date: ".getBytes());
 		os.write((df.format(d)).getBytes());
 		os.write("\n".getBytes());
@@ -196,10 +209,14 @@ public class WebWorker implements Runnable
 	 **/
 	private void writeContent(OutputStream os) throws Exception, FileNotFoundException 
 	{
+        String line = "";
+        File img = new File("propane.jpg");
+        
 		DateFormat df = DateFormat.getDateTimeInstance();
 		df.setTimeZone(TimeZone.getTimeZone("GMT"));
-      		FileReader fr = new FileReader(test);
-      		BufferedReader br = new BufferedReader(fr);
+        FileReader fr = new FileReader(test);
+      	BufferedReader br = new BufferedReader(fr);
+		
 		if(noRequest)
 		{
 			os.write("<html><head></head><body>\n".getBytes());
@@ -219,37 +236,75 @@ public class WebWorker implements Runnable
 				if(line.contains(serverTag))
 				   	line = line.replace(serverTag, "Diego's Insane Server");
 			   		
+                System.out.println(test.toString());
 				os.write(line.getBytes());
 			}
-		}
-		else
+		
+        }
+        
+        //there was a request, then checks if the requested file was found or not
+		else 
 		{
+            //if file was found, checks if the file is an image or a text file
 			if(fileFound)
 			{
-				String read = "";
-				FileReader filer = new FileReader(requested.getCanonicalPath());
-	      			BufferedReader bufferedr = new BufferedReader(filer);
-			
-				while((read = bufferedr.readLine()) != null)
+				type = checkType(type);
+				if( type.equals("image/png") || type.equals("image/jpg") || type.equals("image/gif")) 
 				{
-					if(read.contains(dateTag))
-						read = read.replace(dateTag, (df.format(currDate)));
-		   
-					if(read.contains(serverTag))
-					   	read = read.replace(serverTag, "Diego's Insane Server");
-			   		
-					os.write(read.getBytes());
+                    byte[] imgData = Files.readAllBytes(requested.toPath());
+                    os.write(imgData);
+				}
+				
+				else
+				{
+                    String read = "";
+                    FileReader filer = new FileReader(requested.getCanonicalPath());
+                    BufferedReader bufferedr = new BufferedReader(filer);
+                
+                    while((read = bufferedr.readLine()) != null)
+                    {
+                        if(read.contains(dateTag))
+                            read = read.replace(dateTag, (df.format(currDate)));
+            
+                        if(read.contains(serverTag))
+                            read = read.replace(serverTag, "Diego's Insane Server");
+                        
+                        os.write(read.getBytes());
+                        //os.write(imageData);
+                    }
 				}
 			
 			}
 
-	      		else
-	      		{
+            else if(!fileFound)
+	      	{
 		 		os.write("<html><head></head><body>\n".getBytes());
 				os.write("<h3>Error 404: File Not Found :(</h3>\n".getBytes());
 				os.write("</body></html>\n".getBytes());
 
-	      		}
+	      	}
 		}
+		
+		//os.write(imgData);
+		
 	}
+	
+	/* Checks the type of the file thatwas requested. Called in "run"
+	 *
+     * @param String s, the string that is to get checked
+	 */
+	public String checkType(String t)
+	{
+        if(t.contains(".png"))
+            return "image/png";
+	
+        if(t.contains(".jpeg") || t.contains(".jpg"))
+            return "image/jpg";
+            
+        if(t.contains(".gif"))
+            return "image/gif";
+            
+        return "text/html";
+	}
+	
 } // end class
