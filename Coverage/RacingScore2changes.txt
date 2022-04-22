@@ -1,0 +1,13 @@
+changed
+- else if(score3 < score1 && score3 < score2)
+
+to
++ else if (score3 < score1)
+
+and
+
+changed
+- if(args == null || args.length != 3)
+
+to
++ if(args.length != 3)
