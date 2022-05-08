@@ -1,0 +1,75 @@
+<project name="Circles" basedir="." default="compile">
+	
+	<property name="src" location="./src/"/>
+	<property name="build" location="./bin/"/>
+	<property name="junit.jar" location="./lib/junit-4.10.jar"/>
+	<property name="hamcrest.jar" location="./lib/hamcrest-core-1.3.jar"/>
+	
+
+	<!-- clean Target -->
+	<target name="clean">
+		<delete dir="${build}"/>
+	</target>
+		
+	
+	<!-- compile Target -->
+	<target name="compile" depends="clean">
+		<mkdir dir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+			<classpath>
+				<fileset dir="lib/">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+	
+	
+	<!-- run Target -->
+	<target name="run" depends="compile">
+		<java classname="edu.nmsu.cs.circles.CircleRun" classpath="${build}" fork="true">
+			<arg value="1"/>
+			<arg value="2"/>
+			<arg value="4"/>
+			<arg value="4"/>
+			<arg value="5"/>
+			<arg value="4"/>
+		</java>	
+	</target>
+	
+
+	<!-- testCircle1 Target -->
+	<target name="testCircle1" depends="clean,compile">
+		<java classname="org.junit.runner.JUnitCore" fork="true" dir=".">
+			<classpath>
+				<fileset dir="lib/">
+					<include name="**/*.jar"/>
+				</fileset>
+				<pathelement path="${build}"/>
+			</classpath>
+
+			<arg value="edu.nmsu.cs.circles.Circle1Test"/>
+		</java>
+	</target>
+	
+	
+	<!-- testCircle2 Target -->
+	<target name="testCircle2" depends="clean,compile">
+			<java classname="org.junit.runner.JUnitCore" fork="true" dir=".">
+				<classpath>
+					<fileset dir="lib/">
+						<include name="**/*.jar"/>
+					</fileset>
+					<pathelement path="${build}"/>
+				</classpath>
+				<arg value="edu.nmsu.cs.circles.Circle2Test"/>
+			</java>
+		</target>
+		
+	
+	
+	<!-- test Target -->
+	<target name="test" depends="compile, testCircle1, testCircle2"/>
+
+</project>
+
